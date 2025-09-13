@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 @Service
@@ -23,19 +24,25 @@ public class EmployeeService {
 
     public List<Employee> getAllEmployees() {
         logger.info("Fetching all employees from mock server");
-        ResponseEntity<Map> response = restTemplate.getForEntity(baseUrl, Map.class);
-        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-            List<Map<String, Object>> data =
-                    (List<Map<String, Object>>) response.getBody().get("data");
-            List<Employee> employees = new ArrayList<>();
-            for (Map<String, Object> item : data) {
-                employees.add(mapToEmployee(item));
+        try {
+            ResponseEntity<Map> response = restTemplate.getForEntity(baseUrl, Map.class);
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                List<Map<String, Object>> data =
+                        (List<Map<String, Object>>) response.getBody().get("data");
+                List<Employee> employees = new ArrayList<>();
+                for (Map<String, Object> item : data) {
+                    employees.add(mapToEmployee(item));
+                }
+                logger.info("Fetched {} employees", employees.size());
+                return employees;
             }
-            logger.info("Fetched {} employees", employees.size());
-            return employees;
+            logger.warn("Failed to fetch employees or empty response");
+            return Collections.emptyList();
+        } catch (HttpClientErrorException.TooManyRequests e) {
+            logger.error("Rate limit exceeded when fetching all employees: {}", e.getMessage());
+            // Optionally, throw a custom exception or return a special value.
+            return Collections.emptyList(); // Return empty list on rate limit exceed
         }
-        logger.warn("Failed to fetch employees or empty response");
-        return Collections.emptyList();
     }
 
     public Employee getEmployeeById(String id) {
