@@ -16,7 +16,7 @@ public class EmployeeService {
     private final RestTemplate restTemplate;
     private final String baseUrl;
 
-    public EmployeeService(@Value("${employee.api.base-url:http://localhost:8112/api/v1/employee}") String baseUrl) {
+    public EmployeeService(@Value("${employee.api.base-url}") String baseUrl) {
         this.restTemplate = new RestTemplate();
         this.baseUrl = baseUrl;
     }
